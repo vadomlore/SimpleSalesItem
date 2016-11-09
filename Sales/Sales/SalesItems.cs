@@ -17,13 +17,18 @@ namespace Sales
     {
         public string ISBN { get; set; }
         public double Price {
-            get;set;
+            get; set;
         }
 
         public SalesItem(string isbn, double price)
         {
             this.ISBN = isbn;
             this.Price = price;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("isbn:{0}, price{1}", this.ISBN, this.Price);
         }
     }
 
@@ -50,7 +55,15 @@ namespace Sales
         public double SumPrice(string isbn)
         {
             var price = salesItems.Where(i => i.ISBN == isbn).Sum(x => { return x.Price; });
-            return discountCategories.ContainsKey(isbn) ? price * DiscountCategoryToRate(discountCategories[isbn]): price;
+            return discountCategories.ContainsKey(isbn) ? price * DiscountCategoryToRate(discountCategories[isbn]) : price;
+        }
+
+        public void Print()
+        {
+            foreach(var salesItem in salesItems)
+            {
+                Console.WriteLine(salesItem);
+            }
         }
 
         public static double DiscountCategoryToRate(DiscountCategory category)
@@ -63,6 +76,36 @@ namespace Sales
                 default: return 1;
             }
         }
+    }
 
+    public class SalesManagerOperator
+    {
+        public enum Operation
+        {
+            Add, //add item to salesmanager
+            Sum, // sum the item price,
+            Discount, //discount the salesitem,
+            List
+        }
+
+        public object Command(Operation op, SalesManager smg, Dictionary<string, object> param)
+        {
+            switch (op)
+            {
+                case Operation.Add:
+                    smg.Add(new SalesItem((string)param["isbn"], (double)param["price"]));
+                    return null;
+                case Operation.Sum:
+                    return smg.SumPrice((string)param["isbn"]);
+                case Operation.Discount:
+                    smg.SetCategory((string)param["isbn"], (DiscountCategory)Enum.Parse(typeof(DiscountCategory), (string)param["discount"]));
+                    return null;
+                case Operation.List:
+                    smg.Print();
+                    return null;
+                default:
+                    throw new InvalidOperationException("Invalid Operation");
+            }
+        }
     }
 }
